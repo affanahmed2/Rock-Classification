@@ -16,21 +16,21 @@ This project is designed to classify different types of rocks using a Hikrobot i
 ## 2️⃣ Equipment and Technologies Used
 
 ### Hardware Components:
-- 📷 **Camera Model:** Hikrobot MV-CS060-10UC-PRO
-- 🔬 **Lens:** MVL-HF0828M-6MPE
-- 🏗 **Camera Stand:** Aremak Adjustable Machine Vision Test Stand
-- 💡 **Lighting:** Hikrobot Bar light (MV-LLDS-H-250-40-W)
-- 🖥️ **Operating System:** Windows
+-  **Camera Model:** Hikrobot MV-CS060-10UC-PRO
+-  **Lens:** MVL-HF0828M-6MPE
+-  **Camera Stand:** Aremak Adjustable Machine Vision Test Stand
+-  **Lighting:** Hikrobot Bar light (MV-LLDS-H-250-40-W)
+-  **Operating System:** Windows
 
 ### Software Tools:
-- 🔧 **Programming Language:** Python
-- 🏗 **Libraries:** OpenCV, NumPy, Scikit-learn, CSV
-- 📦 **SDK:** Hikrobot MVS SDK
+-  **Programming Language:** Python
+-  **Libraries:** OpenCV, NumPy, Scikit-learn, CSV
+-  **SDK:** Hikrobot MVS SDK
 
 ## 3️⃣ Setup Photos 📸
 ![Setup Image](Images/Setup.jpg)
 
-## 4️⃣ Installation and Running Instructions 🚀
+## 4️⃣ Installation and Running Instructions 
 ### Installation:
 Ensure you have Python installed (preferably version 3.7+), then install the necessary dependencies:
 
@@ -51,7 +51,7 @@ pip install opencv-python numpy scikit-learn
    ```
 4. Follow the on-screen instructions to train the model or classify rocks.
 
-## 5️⃣ Code Documentation 📜
+## 5️⃣ Code Documentation 
 
 Example function documentation:
 ```python
