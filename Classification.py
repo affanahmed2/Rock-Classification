@@ -67,7 +67,7 @@ print("Camera is grabbing frames... Press ESC to exit.")
 
 
 # Set Camera Parameters
-cam.MV_CC_SetFloatValue("ExposureTime", 100000.0)  # eet exposure time
+cam.MV_CC_SetFloatValue("ExposureTime", 80000.0)  # eet exposure time
 cam.MV_CC_SetEnumValue("GainAuto", 0)  # enable auto gain
 
 # Collect Training Data
