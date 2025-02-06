@@ -28,10 +28,7 @@ This project is designed to classify different types of rocks using a Hikrobot i
 - 📦 **SDK:** Hikrobot MVS SDK
 
 ## 3️⃣ Setup Photos 📸
-Include images of the hardware setup in the `images/` folder.
-
-Example:
-![Setup Image](images/my-setup.jpg)
+![Setup Image](Images/Setup.jpg)
 
 ## 4️⃣ Installation and Running Instructions 🚀
 ### Installation:
