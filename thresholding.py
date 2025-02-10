@@ -230,16 +230,143 @@ def train_and_evaluate_model():
     return model
 
 
+# Capture background model
+def learn_background(frames=30):
+    global background_model
+    accum_bg = None
+    for _ in range(frames):
+        frame = getOpenCVImage()
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        if accum_bg is None:
+            accum_bg = np.float32(gray)
+        else:
+            cv2.accumulateWeighted(gray, accum_bg, 0.1)
+    background_model = cv2.convertScaleAbs(accum_bg)
+    print("Background model learned.")
 
 
-# Global variable to store classification result
-predicted_rock_type = ""
+
+
+def create_trackbar():
+    cv2.namedWindow("Settings", cv2.WINDOW_NORMAL)
+    cv2.createTrackbar("Threshold", "Settings", 50, 255, lambda x: None)
+    cv2.createTrackbar("Kernel Size", "Settings", 5, 20, lambda x: None)
+    cv2.createTrackbar("Min Area", "Settings", 500, 500000, lambda x: None)  # Add Min Area trackbar
+
+
+
+
+def subtract_background(frame):
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    fg_mask = cv2.absdiff(gray, background_model)
+
+    # Get trackbar values
+    threshold_value = cv2.getTrackbarPos("Threshold", "Settings")
+    kernel_size = cv2.getTrackbarPos("Kernel Size", "Settings")
+    if kernel_size % 2 == 0:  # Ensure odd kernel size for morphology operations
+        kernel_size += 1
+
+    _, thresh = cv2.threshold(fg_mask, threshold_value, 255, cv2.THRESH_BINARY)
+    cv2.namedWindow("Thresh", cv2.WINDOW_NORMAL)
+    cv2.imshow("Thresh", thresh)
+    kernel = np.ones((kernel_size, kernel_size), np.uint8)
+    refined_mask = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+    cv2.namedWindow("Background removal", cv2.WINDOW_NORMAL)
+    cv2.imshow("Background removal", refined_mask)
+    return refined_mask
+
+rock_colors = {}
+
+def detect_and_classify_objects(frame, model):
+    mask = subtract_background(frame)
+
+    # Perform Connected Components Analysis
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, connectivity=8)
+
+    # Get the minimum area from the trackbar
+    min_area = cv2.getTrackbarPos("Min Area", "Settings")
+
+    output = frame.copy()
+
+    for label in range(1, num_labels):  # Skip background (label 0)
+        x, y, w, h, area = stats[label]
+
+        if area > min_area:  # Filter by the minimum area from the trackbar
+            rock_region = frame[y:y + h, x:x + w]  # Extract region
+
+            # Get the centroid of the region
+            centroid = tuple(map(int, centroids[label]))
+
+            # Check if the centroid has been seen before (match by centroid)
+            if centroid in rock_colors:
+                color = rock_colors[centroid]  # Use the same color for the same centroid
+            else:
+                # Assign a new random color if the centroid is not seen before
+                color = tuple(np.random.randint(0, 255, size=3))
+                rock_colors[centroid] = color  # Store the color for future reference
+
+            # **Classify the rock type**
+            rock_type = classify_rock_type(model, rock_region)
+
+            # Color the region
+            output[labels == label] = color
+
+            # Display classification text
+            cv2.putText(output, rock_type, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
+    return output
+
+
+
+def detect_and_classify_objects_for_bboxes(frame, model):
+    mask = subtract_background(frame)
+
+    # Perform Connected Components Analysis
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, connectivity=8)
+
+    # Get the minimum area from the trackbar
+    min_area = cv2.getTrackbarPos("Min Area", "Settings")
+
+    output = frame.copy()
+
+    for label in range(1, num_labels):  # Skip background (label 0)
+        x, y, w, h, area = stats[label]
+
+        if area > min_area:  # Filter by the minimum area from the trackbar
+            # Get the centroid of the region
+            centroid = tuple(map(int, centroids[label]))
+
+            # Check if the centroid has been seen before (match by centroid)
+            if centroid in rock_colors:
+                color = rock_colors[centroid]  # Use the same color for the same centroid
+            else:
+                # Assign a new random color if the centroid is not seen before
+                color = tuple(np.random.randint(0, 256, size=3))  # Ensure color is a tuple of 3 integers
+                rock_colors[centroid] = color  # Store the color for future reference
+
+            # Ensure the color is in a valid format
+            if len(color) != 3 or not all(isinstance(c, int) for c in color):
+                color = (0, 0, 255)  # Fallback to red if color is not valid
+
+            # **Classify the rock type**
+            rock_type = classify_rock_type(model, frame[y:y + h, x:x + w])
+
+            # Draw bounding box
+            cv2.rectangle(output, (x, y), (x + w, y + h), color, 2)
+
+            # Display classification text
+            cv2.putText(output, rock_type, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
+    return output
+
+
+
 
 def classify_rock_type(model, cv_image):
-    global predicted_rock_type
     features = extract_hsv_histogram_classify(cv_image)
     prediction = model.predict([features])[0]
-    predicted_rock_type = f"Rock Type {prediction + 1}"  # Store predicted rock type
+    return f"Rock Type {prediction + 1}"
+
 
 
 
@@ -255,27 +382,26 @@ def classify_rock(event, x, y, flags, param):
 
 
 def classify():
-    global predicted_rock_type
+    learn_background()
+    create_trackbar()
     model = train_model()
     while True:
-        cv_image = getOpenCVImage()
+        frame = getOpenCVImage()
         
-        # Draw green rectangle
-        cv2.rectangle(cv_image, (box_x1, box_y1), (box_x2, box_y2), (0, 255, 0), 2)
-        cv2.putText(cv_image, "Place the rock here", (box_x1, box_y1 - 10), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-
-        # Display classification result below the rectangle
-        if predicted_rock_type:
-            cv2.putText(cv_image, predicted_rock_type, (box_x1, box_y2 + 30), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-
-        cv2.imshow("Capture Image for Classification", cv_image)
-
-        # Mouse callback for classification
-        cv2.setMouseCallback("Capture Image for Classification", classify_rock, param=cv_image)
-
-        if cv2.waitKey(1) == 27:  # Exit loop if ESC is pressed
+        # Background subtraction and colored rock classification (for second window)
+        background_removed_frame = detect_and_classify_objects(frame, model)
+        
+        # Detect and classify objects for bounding boxes (first window)
+        frame_with_bboxes = detect_and_classify_objects_for_bboxes(frame, model)
+        
+        # Show both windows
+        cv2.namedWindow("Rock Classification - Bounding Boxes", cv2.WINDOW_NORMAL)
+        cv2.imshow("Rock Classification - Bounding Boxes", frame_with_bboxes)
+        
+        cv2.namedWindow("Background Removal - Colored Rocks", cv2.WINDOW_NORMAL)
+        cv2.imshow("Background Removal - Colored Rocks", background_removed_frame)
+        
+        if cv2.waitKey(1) == 27:  # Exit on ESC key
             break
 
 
