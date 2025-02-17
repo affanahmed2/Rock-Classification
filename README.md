@@ -41,7 +41,7 @@ pip install opencv-python numpy scikit-learn matplotlib
 ### Running the Project:
 1. Clone the repository:
    ```sh
-   git clone https://github.com/your-repo/rock-classification.git
+   git clone https://github.com/affanahmed2/Rock-Classification.git
    cd rock-classification
    ```
 2. Connect the Hikrobot camera and ensure the drivers are installed.
