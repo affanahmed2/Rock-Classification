@@ -20,9 +20,9 @@ This project aims to classify different types of rocks using computer vision and
 -  **Lens:** MVL-HF0828M-6MPE
 -  **Camera Stand:** Aremak Adjustable Machine Vision Test Stand
 -  **Lighting:** Hikrobot Bar light (MV-LLDS-H-250-40-W)
--  **Operating System:** Windows
 
 ### Software Tools:
+- **Operating System:** Windows
 -  **Programming Language:** Python
 -  **Libraries:** OpenCV, NumPy, Scikit-learn, CSV
 -  **SDK:** Hikrobot MVS SDK
